@@ -155,7 +155,7 @@ def test():
     batch_size = 32  # Number of samples from the memory that is used to fit the dnn model
 
     e_scores = DQN(n_episodes, n_timesteps, alpha, gamma, policy, epsilon_start, epsilon_end, epsilon_decay_rate, max_replays, batch_size)
-    # make a plot(e_scores)
+    # plot(e_scores)
 
 
 
