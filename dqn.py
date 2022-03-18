@@ -49,7 +49,7 @@ class DQNAgent:
     
     # Memorize given experience
     def memorize(self, s: list, a: int, r: float, s_next: list, done: bool):        
-        self.replay_memory.append([s, a, r, s_next, done])
+        self.replay_memory.append((s, a, r, s_next, done))
         
         if len(self.replay_memory) > self.max_replays: # If memory size exceeds the set limit
             self.replay_memory.pop(0) # Remove the oldest 
@@ -88,7 +88,7 @@ class DQNAgent:
         if np.random.uniform(0, 1) > self.epsilon:
             a = np.argmax(self.dnn_model.predict(s)) # Choose action with highest Q-value
         else:
-            a = np.random.randint(0, self.n_actions) # Choose random action
+            a = env.action_space.sample() # Choose random action
         
         return a # Return chosen action
     
@@ -125,8 +125,8 @@ for e in range(n_episodes):
         state_next, reward, done, _ = env.step(action) # Last variable never used
         state_next = np.array([state_next]) # Create model compatible shape
         
-        if done:
-            reward = -10 # Give negative reward when done before maximum number of timesteps reached
+        if done and t < 500: # Will it return done=True when > 500?
+            reward = -10 # Give negative reward when done before maximum number of timesteps reached Does this matter?
         
         dqn_agent.memorize(state, action, reward, state_next, done) # Include this experience to the memory
         
