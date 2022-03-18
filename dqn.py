@@ -1,8 +1,6 @@
 import gym
 import numpy as np
 import random
-import pylab
-import tensorflow as tf
 from tensorflow import keras
 
 
