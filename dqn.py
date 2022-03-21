@@ -2,22 +2,28 @@ import gym
 import numpy as np
 import random
 from tensorflow import keras
-
+import matplotlib.pyplot as plt
+from Helper import softmax
 
 # ---------- Deep Q-Learning Agent ----------
 class DQNAgent:
     
-    def __init__(self, alpha, gamma, epsilon_start, epsilon_end, epsilon_decay_rate, max_replays, batch_size):
+    def __init__(self, alpha, gamma, epsilon_start, epsilon_end, epsilon_decay_rate, tau, max_replays, batch_size):
         # (Hyper)parameters: (used values from https://towardsdatascience.com/deep-q-networks-theory-and-implementation-37543f60dd67) 
         self.alpha = alpha # learning rate
         self.gamma = gamma # discount factor
 
+        # Parameters of epsilon greedy policy
         self.epsilon_start = epsilon_start
         self.epsilon_end = epsilon_end # Initially, the agent will always choose a random action (exploration)
         self.epsilon_decay_rate = epsilon_decay_rate # The exploration behavior is gradually replaced by exploitation behavior
         self.parameter = epsilon_end
         self.steps = 0 # Keep track of the decay steps
-        
+
+        # Parameters of softmax policy
+        self.tau = tau # level of exploration
+        self.action_selected = dict()
+
         self.max_replays = max_replays # Only a given amount of memory instants can be saved
         self.batch_size = batch_size # Number of samples from the memory that is used to fit the dnn model
         
@@ -91,17 +97,19 @@ class DQNAgent:
                 a = np.argmax(self.dnn_model.predict(s)) # Choose action with highest Q-value
             else:
                 a = env.action_space.sample() # Choose random action
-        ## TO DO: add a second policy ##
+        elif policy == 'softmax':
+            prob = softmax(self.dnn_model.predict(s), self.tau)
+            a = np.argmax(prob)
 
         return a # Return chosen action
     
 
 
 # --------- https://gym.openai.com/docs/ ----------
-def DQN(n_episodes, n_timesteps, alpha, gamma, policy, epsilon_start, epsilon_end, epsilon_decay_rate, max_replays, batch_size):
+def DQN(n_episodes, n_timesteps, alpha, gamma, policy, epsilon_start, epsilon_end, epsilon_decay_rate, tau, max_replays, batch_size):
     # Create environment of CartPole-v1
     env = gym.make('CartPole-v1')
-    dqn_agent = DQNAgent(alpha, gamma, epsilon_start, epsilon_end, epsilon_decay_rate, max_replays, batch_size)
+    dqn_agent = DQNAgent(alpha, gamma, epsilon_start, epsilon_end, epsilon_decay_rate, tau, max_replays, batch_size)
 
     e_scores = []
     for e in range(n_episodes):
@@ -112,7 +120,7 @@ def DQN(n_episodes, n_timesteps, alpha, gamma, policy, epsilon_start, epsilon_en
         for t in range(n_timesteps):
             env.render()
 
-            action = dqn_agent.choose_action(state, policy) # Choose an action given the current state
+            action = dqn_agent.choose_action(state, t, policy) # Choose an action given the current state
             state_next, reward, done, _ = env.step(action) # Last variable never used
             state_next = np.array([state_next]) # Create model compatible shape
 
@@ -146,16 +154,22 @@ def test():
     alpha = 0.001  # learning rate
     gamma = 0.99  # discount factor
 
-    policy = 'egreedy'
+    policy = 'egreedy' # 'egreedy' or 'UCB'
     epsilon_start = 0.001
     epsilon_end = 1.0  # Initially, the agent will always choose a random action (exploration)
     epsilon_decay_rate = 0.001  # The exploration behavior is gradually replaced by exploitation behavior
+    tau = 0.5
 
     max_replays = 2000  # Only a given amount of memory instants can be saved
     batch_size = 32  # Number of samples from the memory that is used to fit the dnn model
 
-    e_scores = DQN(n_episodes, n_timesteps, alpha, gamma, policy, epsilon_start, epsilon_end, epsilon_decay_rate, max_replays, batch_size)
-    # make plot(e_scores)
+    e_scores = DQN(n_episodes, n_timesteps, alpha, gamma, policy, epsilon_start, epsilon_end, epsilon_decay_rate, tau, max_replays, batch_size)
+
+    # Plot the e-scores
+    plt.plot(range(n_episodes), e_scores)
+    plt.xlabel('Number of episodes')
+    plt.ylabel('Duration')
+    plt.show()
 
 
 
