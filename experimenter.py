@@ -1,12 +1,32 @@
 import argparse
-from ast import arg
 
 from plotter import LearningCurvePlot
+from dqn import act_in_env
 
 
 # 
-def run_dqn_agent():
-    print('Run')
+def test_dqn_agent():
+    # The episode terminates if (pole angle greater than -12/12) or (cart position greater than -2.4,2.4) or (episode length exceeds 500)
+    # Goal: Keep up the pole for 500 timesteps (as long as possible), if done=True too soon, then reward should be negative?
+    n_episodes = 1000   # number of episodes the agent will go through
+    n_timesteps = 500   # number of timesteps one episode can maximally contain
+
+    policies = ['egreedy', 'softmax']
+
+    param_dict = {
+        'alpha': 0.001, # learning rate
+        'gamma': 0.99,  # discount factor
+        'policy': policies[0],    # exploration strategy
+        'epsilon': 1.0, # initially, the agent will always choose a random action (exploration)
+        'epsilon_min': 0.001,   # minimum value of exploration
+        'epsilon_decay_rate': 0.001,    # exploration behavior is gradually replaced by exploitation behavior
+        'tau': 0.5, # for softmax exploration strategy
+        'max_replays': 2000,    # only a given amount of memory instants can be saved
+        'batch_size': 32,    # number of samples from the memory that is used to fit the dnn model
+        'target_network': True  # has a target network (True) or not (False)
+    }
+
+    act_in_env(n_episodes=n_episodes, n_timesteps=n_timesteps, param_dict=param_dict)
 
 
 # Determine which DQN agent is used with experiment
@@ -24,6 +44,7 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
 
     elif experience_replay and target_network:
         print('Run experiment on DQN-ER-TN agent')
+        test_dqn_agent()
 
     else:
         print('Run experiment on DQN agent')
