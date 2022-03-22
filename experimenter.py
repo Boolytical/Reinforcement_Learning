@@ -26,7 +26,7 @@ def test_dqn_agent():
         'target_network': True  # has a target network (True) or not (False)
     }
 
-    act_in_env(n_episodes=n_episodes, n_timesteps=n_timesteps, param_dict=param_dict)
+    return act_in_env(n_episodes=n_episodes, n_timesteps=n_timesteps, param_dict=param_dict)
 
 
 # Determine which DQN agent is used with experiment
@@ -44,7 +44,9 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
 
     elif experience_replay and target_network:
         print('Run experiment on DQN-ER-TN agent')
-        test_dqn_agent()
+
+        # TODO build further on this by passing different parameter values to this function
+        all_rewards_of_run = test_dqn_agent()
 
     else:
         print('Run experiment on DQN agent')

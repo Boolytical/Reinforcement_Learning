@@ -119,7 +119,6 @@ class DQNAgent:
 
 
 def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
-    print('act')
 
     env = gym.make('CartPole-v1')   # create environment of CartPole-v1
     dqn_agent = DQNAgent(param_dict)
