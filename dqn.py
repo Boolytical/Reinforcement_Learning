@@ -15,10 +15,9 @@ class DQNAgent:
         self.policy = param_dict['policy']
 
         # Parameters of epsilon greedy policy
-        self.epsilon_start = param_dict['epsilon']
-        self.epsilon_end = param_dict['epsilon_min']
+        self.epsilon = param_dict['epsilon']
+        self.epsilon_min = param_dict['epsilon_min']
         self.epsilon_decay_rate = param_dict['epsilon_decay_rate']
-        self.steps = 0  # keep track of the steps for decaying epsilon
 
         # Parameters of softmax policy
         self.tau = param_dict['tau']
@@ -102,19 +101,25 @@ class DQNAgent:
     def choose_action(self, s):
         if self.policy == 'egreedy':
             # Decay the epsilon
-            current_epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * np.exp(-1 * self.steps / self.epsilon_decay_rate)
-            self.steps += 1
-            print(f'Current epsilon is {current_epsilon}')
+            # current_epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * np.exp(-1 * self.steps / self.epsilon_decay_rate)
+            # self.steps += 1
 
-            if np.random.uniform(0, 1) > current_epsilon:
+            if np.random.uniform(0, 1) > self.epsilon:
                 a = np.argmax(self.dnn_model.predict(s)) # Choose action with highest Q-value
             else:
-                a = np.random.randint(0,self.n_actions)   # Choose random action
+                a = np.random.randint(0,self.n_actions)   # Choose random action 
 
         return a # Return chosen action
 
+    # Decay epsilon
+    def decay_epsilon(self, n_episodes: int):
+        if self.policy == 'egreedy' and self.epsilon > self.epsilon_min:
+            epsilon_delta = (self.epsilon - self.epsilon_min) / n_episodes
+            self.epsilon = self.epsilon - epsilon_delta   
+
 
 def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
+    print('act')
 
     env = gym.make('CartPole-v1')   # create environment of CartPole-v1
     dqn_agent = DQNAgent(param_dict)
@@ -129,7 +134,7 @@ def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
         for t in range(n_timesteps):
             env.render()
 
-            action = dqn_agent.choose_action(state, t)  # choose an action given the current state
+            action = dqn_agent.choose_action(state)  # choose an action given the current state
             state_next, reward, done, _ = env.step(action)  # last variable never used
             state_next = np.array([state_next]) # create model compatible shape
 
@@ -141,11 +146,12 @@ def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
             state = state_next
 
             if done:
-                print("Episode {} finished after {} timesteps".format(e+1, t+1))
+                print("Episode {} with epsilon {} finished after {} timesteps".format(e+1, dqn_agent.epsilon, t+1))
                 env_scores.append(t+1)
                 break
 
         dqn_agent.learn() # learn from current collected experience
+        dqn_agent.decay_epsilon(n_episodes) # decay epsilon after every episode
 
     env.close()
 
