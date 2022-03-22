@@ -14,7 +14,7 @@ def test_dqn_agent():
     policies = ['egreedy', 'softmax']
 
     param_dict = {
-        'alpha': 0.001, # learning rate
+        'alpha': 0.1, # learning rate
         'gamma': 0.99,  # discount factor
         'policy': policies[0],    # exploration strategy
         'epsilon': 1.0, # initially, the agent will always choose a random action (exploration)

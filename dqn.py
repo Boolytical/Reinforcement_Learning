@@ -64,7 +64,7 @@ class DQNAgent:
         if len(self.replay_memory) > self.max_replays: # If memory size exceeds the set limit
             self.replay_memory.pop(0) # Remove the oldest 
             
-    # Improve the model by feeding a batch of samples from the saved memory
+    # Improve the model by feeding one per time of a batch of samples from the saved memory with or without target network
     def learn(self):
         if len(self.replay_memory) >= self.batch_size: # Only sample and learn if the agent has collected enough experience
     
@@ -96,6 +96,31 @@ class DQNAgent:
                 
                 # Use the current model again to fit the weights
                 self.dnn_model.fit(s, targets_fit, verbose=0) # Fit the model to the new target values given s
+
+    # Improve the model by feeding a batch of samples from the saved memory using one model only
+    def learn_batch_wise(self):
+        batch = random.sample(self.replay_memory, self.batch_size)
+        states = np.zeros((self.batch_size, self.states_size))  # Dim: batch_size x 4
+        states_next = np.zeros((self.batch_size, self.states_size))  # Dim: batch_size x 4
+        actions, rewards, dones = [], [], []
+
+        for cnt, experience in enumerate(batch):
+            states[cnt, :] = experience['state'] # Collect states of all experiences from batch
+            states_next[cnt, :] = experience['state_next'] # Collect new states of all experiences from batch
+            actions.append(experience['action']) # Collect actions of all experiences from batch
+            rewards.append(experience['reward']) # Collect rewards of all experiences from batch
+            dones.append(experience['done'])
+
+        output = self.dnn_model.predict(states)  # Dim: batch_size x 2(actions) --> Primary network
+        target = self.dnn_model.predict(states_next)  # Dim: batch_size x 2(actions)
+
+        for i in range(self.batch_size):
+            if not dones[i]:
+                output[i, :][actions[i]] = rewards[i] + self.gamma * np.max(target[i])
+            else:
+                output[i, :][actions[i]] = rewards[i]
+
+        self.dnn_model.fit(states, output, verbose=0)
                     
     # Choose action combined with epsilon greedy method to balance between exploration and exploitation
     def choose_action(self, s):
