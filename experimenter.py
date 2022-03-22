@@ -4,11 +4,11 @@ from plotter import LearningCurvePlot
 from dqn import act_in_env
 
 
-# 
+# Test the dqn agent with given parameter values
 def test_dqn_agent():
     # The episode terminates if (pole angle greater than -12/12) or (cart position greater than -2.4,2.4) or (episode length exceeds 500)
     # Goal: Keep up the pole for 500 timesteps (as long as possible), if done=True too soon, then reward should be negative?
-    n_episodes = 1000   # number of episodes the agent will go through
+    n_episodes = 200   # number of episodes the agent will go through
     n_timesteps = 500   # number of timesteps one episode can maximally contain
 
     policies = ['egreedy', 'softmax']
@@ -45,8 +45,12 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
     elif experience_replay and target_network:
         print('Run experiment on DQN-ER-TN agent')
 
+        SingleRunPlot = LearningCurvePlot(title='DQN-ER-TN')
+
         # TODO build further on this by passing different parameter values to this function
         all_rewards_of_run = test_dqn_agent()
+        SingleRunPlot.add_curve(all_rewards_of_run)
+        SingleRunPlot.save(filename='dqn_er_tn.png')
 
     else:
         print('Run experiment on DQN agent')

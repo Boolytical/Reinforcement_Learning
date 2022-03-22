@@ -137,9 +137,6 @@ def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
             state_next, reward, done, _ = env.step(action)  # last variable never used
             state_next = np.array([state_next]) # create model compatible shape
 
-            if done and t < 499: 
-                reward = -10    # give negative reward when done before maximum number of timesteps reached Does this matter?
-
             dqn_agent.memorize(state, action, reward, state_next, done) # include this experience to the memory
 
             state = state_next
