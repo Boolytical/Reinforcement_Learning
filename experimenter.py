@@ -5,7 +5,7 @@ from dqn import act_in_env
 
 
 # Test the dqn agent with given parameter values
-def test_dqn_agent():
+def test_dqn_agent(learn_batch_wise:bool):
     # The episode terminates if (pole angle greater than -12/12) or (cart position greater than -2.4,2.4) or (episode length exceeds 500)
     # Goal: Keep up the pole for 500 timesteps (as long as possible), if done=True too soon, then reward should be negative?
     n_episodes = 200   # number of episodes the agent will go through
@@ -23,7 +23,8 @@ def test_dqn_agent():
         'tau': 0.5, # for softmax exploration strategy
         'max_replays': 2000,    # only a given amount of memory instants can be saved
         'batch_size': 32,    # number of samples from the memory that is used to fit the dnn model
-        'target_network': True  # has a target network (True) or not (False)
+        'target_network': True,  # has a target network (True) or not (False)
+        'learn_batch_wise': learn_batch_wise # learn in batches (True) or per sample of batch (False)
     }
 
     return act_in_env(n_episodes=n_episodes, n_timesteps=n_timesteps, param_dict=param_dict)
@@ -45,12 +46,20 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
     elif experience_replay and target_network:
         print('Run experiment on DQN-ER-TN agent')
 
-        SingleRunPlot = LearningCurvePlot(title='DQN-ER-TN')
+        SingleRunPlot = LearningCurvePlot(title='DQN-ER-TN')    # TODO run multiple times one setting and average it
 
         # TODO build further on this by passing different parameter values to this function
-        all_rewards_of_run = test_dqn_agent()
-        SingleRunPlot.add_curve(all_rewards_of_run)
-        SingleRunPlot.save(filename='dqn_er_tn.png')
+        for learn_batch_wise_param in (True, False):
+
+            if learn_batch_wise_param:
+                label = 'batch-wise'
+            else:
+                label = 'sample-wise'
+
+            all_rewards_of_run = test_dqn_agent(learn_batch_wise=True)
+            SingleRunPlot.add_curve(all_rewards_of_run, label)
+
+        SingleRunPlot.save('dqn_er_tn_learning_methods.png')
 
     else:
         print('Run experiment on DQN agent')

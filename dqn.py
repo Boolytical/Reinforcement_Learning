@@ -3,6 +3,8 @@ import numpy as np
 import random
 from tensorflow import keras
 
+from util import softmax
+
 
 # ---------- Deep Q-Learning Agent ----------
 class DQNAgent:
@@ -99,33 +101,33 @@ class DQNAgent:
 
     # Improve the model by feeding a batch of samples from the saved memory using one model only
     def learn_batch_wise(self):
-        batch = random.sample(self.replay_memory, self.batch_size)
-        states = np.zeros((self.batch_size, self.states_size))  # Dim: batch_size x 4
-        states_next = np.zeros((self.batch_size, self.states_size))  # Dim: batch_size x 4
-        actions, rewards, dones = [], [], []
+        if len(self.replay_memory) >= self.batch_size:
+            batch = random.sample(self.replay_memory, self.batch_size)
+            states = np.zeros((self.batch_size, self.n_states))  # Dim: batch_size x 4
+            states_next = np.zeros((self.batch_size, self.n_states))  # Dim: batch_size x 4
+            actions, rewards, dones = [], [], []
 
-        for cnt, experience in enumerate(batch):
-            states[cnt, :] = experience['state'] # Collect states of all experiences from batch
-            states_next[cnt, :] = experience['state_next'] # Collect new states of all experiences from batch
-            actions.append(experience['action']) # Collect actions of all experiences from batch
-            rewards.append(experience['reward']) # Collect rewards of all experiences from batch
-            dones.append(experience['done'])
+            for cnt, experience in enumerate(batch):
+                states[cnt, :] = experience[0] # Collect states of all experiences from batch
+                states_next[cnt, :] = experience[3] # Collect new states of all experiences from batch
+                actions.append(experience[1]) # Collect actions of all experiences from batch
+                rewards.append(experience[2]) # Collect rewards of all experiences from batch
+                dones.append(experience[4])
 
-        output = self.dnn_model.predict(states)  # Dim: batch_size x 2(actions) --> Primary network
-        target = self.dnn_model.predict(states_next)  # Dim: batch_size x 2(actions)
+            output = self.dnn_model.predict(states)  # Dim: batch_size x 2(actions) --> Primary network
+            target = self.dnn_model.predict(states_next)  # Dim: batch_size x 2(actions)
 
-        for i in range(self.batch_size):
-            if not dones[i]:
-                output[i, :][actions[i]] = rewards[i] + self.gamma * np.max(target[i])
-            else:
-                output[i, :][actions[i]] = rewards[i]
+            for i in range(self.batch_size):
+                if not dones[i]:
+                    output[i, :][actions[i]] = rewards[i] + self.gamma * np.max(target[i])
+                else:
+                    output[i, :][actions[i]] = rewards[i]
 
-        self.dnn_model.fit(states, output, verbose=0)
+            self.dnn_model.fit(states, output, verbose=0)
                     
     # Choose action combined with epsilon greedy method to balance between exploration and exploitation
     def choose_action(self, s):
         if self.policy == 'egreedy':
-            # Decay the epsilon
             # current_epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * np.exp(-1 * self.steps / self.epsilon_decay_rate)
             # self.steps += 1
 
@@ -133,6 +135,12 @@ class DQNAgent:
                 a = np.argmax(self.dnn_model.predict(s)) # Choose action with highest Q-value
             else:
                 a = np.random.randint(0,self.n_actions)   # Choose random action 
+        
+        elif self.policy == 'softmax':
+            raise KeyError('Softmax not yet implemented')
+
+        else:
+            raise KeyError(f'Given policy {self.policy} not existing')
 
         return a # Return chosen action
 
@@ -156,7 +164,7 @@ def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
         state = np.array([state])   # create model compatible shape
 
         for t in range(n_timesteps):
-            env.render()
+            # env.render()
 
             action = dqn_agent.choose_action(state)  # choose an action given the current state
             state_next, reward, done, _ = env.step(action)  # last variable never used
@@ -170,8 +178,12 @@ def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
                 print("Episode {} with epsilon {} finished after {} timesteps".format(e+1, dqn_agent.epsilon, t+1))
                 env_scores.append(t+1)
                 break
+        
+        if param_dict['learn_batch_wise']:
+            dqn_agent.learn_batch_wise() # learn from current collected experience feeding whole batch to network
+        else:
+            dqn_agent.learn() # learn from current collected experience feeding one experience of batch to the network per time
 
-        dqn_agent.learn() # learn from current collected experience
         dqn_agent.decay_epsilon(n_episodes) # decay epsilon after every episode
 
     env.close()
