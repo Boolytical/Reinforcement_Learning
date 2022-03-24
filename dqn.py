@@ -48,8 +48,8 @@ class DQNAgent:
         model = keras.Sequential(
             [
                 keras.layers.Input(shape=(self.n_states,)),
-                keras.layers.Dense(units=64, activation='relu'),
-                keras.layers.Dense(units=32, activation='relu'),
+                keras.layers.Dense(units=24, activation='relu'),    # 64 used for good results with batch-wise
+                keras.layers.Dense(units=12, activation='relu'),    # 32 used for good results with sample-wise
                 keras.layers.Dense(units=self.n_actions, activation='linear')
             ]
         )
@@ -67,7 +67,7 @@ class DQNAgent:
             self.replay_memory.pop(0) # Remove the oldest 
             
     # Improve the model by feeding one per time of a batch of samples from the saved memory with or without target network
-    def learn(self):
+    def learn_sample_wise(self):
         if len(self.replay_memory) >= self.batch_size: # Only sample and learn if the agent has collected enough experience
     
             batch_memory = random.sample(self.replay_memory, self.batch_size) # Every memory can be selected only once
@@ -128,8 +128,6 @@ class DQNAgent:
     # Choose action combined with epsilon greedy method to balance between exploration and exploitation
     def choose_action(self, s):
         if self.policy == 'egreedy':
-            # current_epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * np.exp(-1 * self.steps / self.epsilon_decay_rate)
-            # self.steps += 1
 
             if np.random.uniform(0, 1) > self.epsilon:
                 a = np.argmax(self.dnn_model.predict(s)) # Choose action with highest Q-value
@@ -137,9 +135,12 @@ class DQNAgent:
                 a = np.random.randint(0,self.n_actions)   # Choose random action 
         
         elif self.policy == 'softmax':
-            raise KeyError('Softmax not yet implemented')
+            
+            action_probabilities = softmax(self.dnn_model.predict(s), self.tau)
+            a = random.choice(self.n_actions, p=action_probabilities)   # Choose action based on their probabilities
 
         else:
+
             raise KeyError(f'Given policy {self.policy} not existing')
 
         return a # Return chosen action
@@ -151,6 +152,7 @@ class DQNAgent:
             self.epsilon = self.epsilon - epsilon_delta   
 
 
+# Place the agent into the cartpole environment and return all received rewards per episode
 def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
 
     env = gym.make('CartPole-v1')   # create environment of CartPole-v1
@@ -182,7 +184,7 @@ def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
         if param_dict['learn_batch_wise']:
             dqn_agent.learn_batch_wise() # learn from current collected experience feeding whole batch to network
         else:
-            dqn_agent.learn() # learn from current collected experience feeding one experience of batch to the network per time
+            dqn_agent.learn_sample_wise() # learn from current collected experience feeding one experience of batch to the network per time
 
         dqn_agent.decay_epsilon(n_episodes) # decay epsilon after every episode
 
