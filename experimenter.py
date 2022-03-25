@@ -7,6 +7,7 @@ import numpy as np
 
 # Test the dqn agent with given parameter values
 def test_dqn_agent(alpha: float, learn_batch_wise: bool, n_timesteps, n_episodes):
+
     # The episode terminates if (pole angle greater than -12/12) or (cart position greater than -2.4,2.4) or (episode length exceeds 500)
     # Goal: Keep up the pole for 500 timesteps (as long as possible), if done=True too soon, then reward should be negative?
 
@@ -49,32 +50,27 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
         print('Run experiment on DQN-ER-TN agent')
 
         MultipleRunPlot = LearningCurvePlot(title=f'DQN-ER-TN: Averaged Results over {n_repetitions} repetitions')
+        rewards_of_run_experiments = np.empty([n_repetitions, n_episodes])
+        for rep in range(n_repetitions):
 
-        for alpha_value in (0.001, 0.005, 0.01, 0.05, 0.1, 0.5):
+        print(f'LEARN METHOD: {label}')
 
-            label = 'alpha = {}'.format(alpha_value)
+        rewards_of_run_experiments = np.empty([n_repititions, n_episodes])
+        for rep in range(n_repititions):
+            all_rewards_of_run = test_dqn_agent(learn_batch_wise=learn_batch_wise_param,
+                                                n_timesteps=n_timesteps,
+                                                n_episodes=n_episodes)
 
-            print(f'Parameter setting: {label}')
+            print(f'Rewards of experiment {rep + 1} for {label}-learn: {all_rewards_of_run}')
+            rewards_of_run_experiments[rep] = all_rewards_of_run
 
-            rewards_of_run_experiments = np.empty([n_repetitions, n_episodes])
+        learning_curve = np.mean(rewards_of_run_experiments, axis=0)  # average over repetitions
+        MultipleRunPlot.add_curve(learning_curve, label)
 
-            for rep in range(n_repetitions):
+      MultipleRunPlot.save('dqn_er_tn_learning_methods.png')
 
-                all_rewards_of_run = test_dqn_agent(alpha=alpha_value,
-                                                    learn_batch_wise=False,
-                                                    n_timesteps=n_timesteps,
-                                                    n_episodes=n_episodes)
-
-                print(f'Rewards of experiment {rep + 1} for {label}: {all_rewards_of_run}')
-                rewards_of_run_experiments[rep] = all_rewards_of_run
-
-            learning_curve = np.mean(rewards_of_run_experiments, axis=0)  # average over repetitions
-            MultipleRunPlot.add_curve(learning_curve, label)
-
-        MultipleRunPlot.save('dqn_er_tn_sample_wise_alpha.png')
-
-    else:
-        print('Run experiment on DQN agent')
+      else:
+          print('Run experiment on DQN agent')
 
 
 if __name__ == '__main__':
