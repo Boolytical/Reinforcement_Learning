@@ -126,25 +126,25 @@ class DQNAgent:
             self.dnn_model.fit(states, output, verbose=0)
                     
     # Choose action combined with epsilon greedy method to balance between exploration and exploitation
-def choose_action(self, s, policy):
-    if self.policy == 'egreedy':
-        # Decay the epsilon greedy
-        self.epsilon = self.epsilon_max + (self.epsilon_min - self.epsilon_max) * np.exp(-1 * self.steps / self.epsilon_decay_rate)
-        self.steps += 1
+    def choose_action(self, s):
+        if self.policy == 'egreedy':
+            # Decay the epsilon greedy
+            self.epsilon = self.epsilon_max + (self.epsilon_min - self.epsilon_max) * np.exp(-1 * self.steps / self.epsilon_decay_rate)
+            self.steps += 1
 
-        if np.random.uniform(0, 1) > self.parameter:
-            a = np.argmax(self.dnn_model.predict(s)) # Choose action with highest Q-value
+            if np.random.uniform(0, 1) > self.parameter:
+                a = np.argmax(self.dnn_model.predict(s)) # Choose action with highest Q-value
+            else:
+                a = np.random.randint(0,self.n_actions)   # Choose random action 
+
+        elif self.policy == 'softmax':
+            action_probabilities = softmax(self.dnn_model.predict(s), self.tau)
+            a = random.choice(self.n_actions, p=action_probabilities)   # Choose action based on their probabilities
+
         else:
-            a = np.random.randint(0,self.n_actions)   # Choose random action 
+            raise KeyError(f'Given policy {self.policy} not existing')
 
-    elif self.policy == 'softmax':
-        action_probabilities = softmax(self.dnn_model.predict(s), self.tau)
-        a = random.choice(self.n_actions, p=action_probabilities)   # Choose action based on their probabilities
-        
-    else:
-        raise KeyError(f'Given policy {self.policy} not existing')
-
-    return a # Return chosen action
+        return a # Return chosen action
 
 
 # --------- https://gym.openai.com/docs/ ----------
