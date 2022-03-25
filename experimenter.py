@@ -5,9 +5,8 @@ from dqn import act_in_env
 import numpy as np
 from plotter import smooth
 
-
 # Test the dqn agent with given parameter values
-def test_dqn_agent(target_network: str, n_timesteps, n_episodes, tau, learning_rate, policy):
+def test_dqn_agent(batch_size, target_network: str, n_timesteps, n_episodes, tau, learning_rate, policy):
     # The episode terminates if (pole angle greater than -12/12) or (cart position greater than -2.4,2.4) or (episode length exceeds 500)
     # Goal: Keep up the pole for 500 timesteps (as long as possible), if done=True too soon, then reward should be negative?
 
@@ -21,7 +20,7 @@ def test_dqn_agent(target_network: str, n_timesteps, n_episodes, tau, learning_r
         'epsilon_decay_rate': 0.001,  # exploration behavior is gradually replaced by exploitation behavior
         'tau': tau,  # for softmax exploration strategy
         'max_replays': 2000,  # only a given amount of memory instants can be saved
-        'batch_size': 64,  # number of samples from the memory that is used to fit the dnn model
+        'batch_size': batch_size,  # number of samples from the memory that is used to fit the dnn model
         'target_network': target_network,  # has a target network (True) or not (False)
     }
 
@@ -30,13 +29,9 @@ def test_dqn_agent(target_network: str, n_timesteps, n_episodes, tau, learning_r
 
 # Determine which DQN agent is used with experiment
 def determine_experiment(all_variations: bool, experience_replay: bool, target_network: bool):
-
+    n_repetitions = 3
     n_episodes = 200  # number of episodes the agent will go through
     n_timesteps = 500  # number of timesteps one episode can maximally contain
-    n_repititions = 3
-    smoothing_window = 51
-
-    target_network = True # if False then it is sample_wise
 
     policies = ['egreedy', 'softmax']
     taus = [0.1, 0.5, 1.0]
@@ -48,30 +43,45 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
     # For experiments below, all parameter experiments are performed
     elif experience_replay and not target_network:
         print('Run experiment on DQN-ER agent')
+        target_network = False
+        reward = test_dqn_agent(batch_size = batch_size,
+                                   target_network=target_network,
+                                   n_timesteps=n_timesteps,
+                                   n_episodes=n_episodes,
+                                   policy=policy,
+                                   tau=None,
+                                   learning_rate=learning_rate)
 
     elif target_network and not experience_replay:
         print('Run experiment on DQN-TN agent')
+        batch_size = 1
+        reward = test_dqn_agent(batch_size = batch_size,
+                                           target_network=target_network,
+                                           n_timesteps=n_timesteps,
+                                           n_episodes=n_episodes,
+                                           policy=policy,
+                                           tau=None,
+                                           learning_rate=learning_rate)
 
     elif experience_replay and target_network:
         print('Run experiment on DQN-ER-TN agent')
-
-        MultipleRunPlot = LearningCurvePlot(title=f'DQN-ER-TN: Averaged Results over {n_repititions} repititions')
+        MultipleRunPlot = LearningCurvePlot(title=f'DQN-ER-TN: Averaged Results over {n_repetitions} repititions')
+        
+        batch_size = 64 
+        target_network = True # if False then it is sample_wise
 
         for learning_rate in learning_rates:
-
             print(f'LEARNING RATE: {learning_rate}')
-
             for policy in policies:
-
                 print(f'POLICY: {policy}')
-
                 if policy == 'egreedy':
                     print('skip')
 
-                    #rewards_of_run_experiments = np.empty([n_repititions, n_episodes])
-                    #for rep in range(n_repititions):
+                    #rewards_of_run_experiments = np.empty([n_repetitions, n_episodes])
+                    #for rep in range(n_repetitions):
 
-                    #    all_rewards_of_run = test_dqn_agent(network_method=network_method,
+                    #    all_rewards_of_run = test_dqn_agent(batch_size = batch_size,
+                    #                                        target_network=target_network,
                     #                                        n_timesteps=n_timesteps,
                     #                                        n_episodes=n_episodes,
                     #                                        policy=policy,
@@ -85,19 +95,17 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
                     #MultipleRunPlot.add_curve(y=learning_curve, label=f'{policy}-annealing policy with alpha={learning_rate}')
 
                 if policy == 'softmax':
-
                     for tau in taus:
-
-                        rewards_of_run_experiments = np.empty([n_repititions, n_episodes])
-                        for rep in range(n_repititions):
-
-                            all_rewards_of_run = test_dqn_agent(target_network=target_network,
+                        rewards_of_run_experiments = np.empty([n_repetitions, n_episodes])
+                        
+                        for rep in range(n_repetitions):
+                            all_rewards_of_run = test_dqn_agent(batch_size = batch_size, 
+                                                                target_network=target_network,
                                                                 n_timesteps=n_timesteps,
                                                                 n_episodes=n_episodes,
                                                                 policy=policy,
                                                                 tau=tau,
                                                                 learning_rate=learning_rate)
-
                             print(f'Rewards of experiment {rep + 1} for {policy}-policy with tau={tau} and alpha={learning_rate}: {all_rewards_of_run}')
                             rewards_of_run_experiments[rep] = all_rewards_of_run
 
@@ -106,7 +114,7 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
 
 
         MultipleRunPlot.save('dqn_er_tn_learning_methods.png')
-
+        
     else:
         print('Run experiment on DQN agent')
 
