@@ -17,9 +17,11 @@ class DQNAgent:
         self.policy = param_dict['policy']
 
         # Parameters of epsilon greedy policy
-        self.epsilon = param_dict['epsilon']
+        self.epsilon_max = param_dict['epsilon']
+        self.epsilon = copy(self.epsilon_max)
         self.epsilon_min = param_dict['epsilon_min']
         self.epsilon_decay_rate = param_dict['epsilon_decay_rate']
+        self.steps = 0
 
         # Parameters of softmax policy
         self.tau = param_dict['tau']
@@ -112,10 +114,10 @@ class DQNAgent:
     # Choose action combined with epsilon greedy method to balance between exploration and exploitation
     def choose_action(self, s):
         if self.policy == 'egreedy':
-            # current_epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * np.exp(-1 * self.steps / self.epsilon_decay_rate)
-            # self.steps += 1
+            self.epsilon = self.epsilon_max + (self.epsilon_min - self.epsilon_max) * np.exp(-1 * self.steps / self.epsilon_decay_rate)
+            self.steps += 1
 
-            if np.random.uniform(0, 1) > self.epsilon:
+            if np.random.uniform(0, 1) > self.parameter:
                 a = np.argmax(self.dnn_model.predict(s)) # Choose action with highest Q-value
             else:
                 a = np.random.randint(0,self.n_actions)   # Choose random action 
@@ -130,11 +132,11 @@ class DQNAgent:
 
         return a # Return chosen action
 
-    # Decay epsilon
-    def decay_epsilon(self, n_episodes: int):
-        if self.policy == 'egreedy' and self.epsilon > self.epsilon_min:
-            epsilon_delta = (self.epsilon - self.epsilon_min) / n_episodes
-            self.epsilon = self.epsilon - epsilon_delta   
+#     # Decay epsilon
+#     def decay_epsilon(self, n_episodes: int):
+#         if self.policy == 'egreedy' and self.epsilon > self.epsilon_min:
+#             epsilon_delta = (self.epsilon - self.epsilon_min) / n_episodes
+#             self.epsilon = self.epsilon - epsilon_delta   
 
 
 def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
@@ -174,8 +176,8 @@ def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
         else:
             dqn_agent.learn_sample_wise() # learn from current collected experience feeding one experience of batch to the network per time
 
-        if dqn_agent.policy == 'egreedy':
-            dqn_agent.decay_epsilon(n_episodes) # decay epsilon after every episode
+#         if dqn_agent.policy == 'egreedy':
+#             dqn_agent.decay_epsilon(n_episodes) # decay epsilon after every episode
 
     env.close()
 
