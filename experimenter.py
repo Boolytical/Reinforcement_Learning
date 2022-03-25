@@ -6,7 +6,8 @@ import numpy as np
 
 
 # Test the dqn agent with given parameter values
-def test_dqn_agent(learn_batch_wise: bool, n_timesteps, n_episodes):
+def test_dqn_agent(alpha: float, learn_batch_wise: bool, n_timesteps, n_episodes):
+
     # The episode terminates if (pole angle greater than -12/12) or (cart position greater than -2.4,2.4) or (episode length exceeds 500)
     # Goal: Keep up the pole for 500 timesteps (as long as possible), if done=True too soon, then reward should be negative?
 
@@ -33,7 +34,7 @@ def test_dqn_agent(learn_batch_wise: bool, n_timesteps, n_episodes):
 def determine_experiment(all_variations: bool, experience_replay: bool, target_network: bool):
     n_episodes = 200  # number of episodes the agent will go through
     n_timesteps = 500  # number of timesteps one episode can maximally contain
-    n_repititions = 3
+    n_repetitions = 3
 
     if all_variations:
         print('Run experiment on all DQN agent variations')
@@ -48,34 +49,28 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
     elif experience_replay and target_network:
         print('Run experiment on DQN-ER-TN agent')
 
-        MultipleRunPlot = LearningCurvePlot(title=f'DQN-ER-TN: Averaged Results over {n_repititions} repititions')
+        MultipleRunPlot = LearningCurvePlot(title=f'DQN-ER-TN: Averaged Results over {n_repetitions} repetitions')
+        rewards_of_run_experiments = np.empty([n_repetitions, n_episodes])
+        for rep in range(n_repetitions):
 
-        # TODO build further on this by passing different parameter values to this function
-        for learn_batch_wise_param in (True, False):
+        print(f'LEARN METHOD: {label}')
 
-            if learn_batch_wise_param:
-                label = 'batch-wise'
-            else:
-                label = 'sample-wise'
+        rewards_of_run_experiments = np.empty([n_repititions, n_episodes])
+        for rep in range(n_repititions):
+            all_rewards_of_run = test_dqn_agent(learn_batch_wise=learn_batch_wise_param,
+                                                n_timesteps=n_timesteps,
+                                                n_episodes=n_episodes)
 
-            print(f'LEARN METHOD: {label}')
+            print(f'Rewards of experiment {rep + 1} for {label}-learn: {all_rewards_of_run}')
+            rewards_of_run_experiments[rep] = all_rewards_of_run
 
-            rewards_of_run_experiments = np.empty([n_repititions, n_episodes])
-            for rep in range(n_repititions):
-                all_rewards_of_run = test_dqn_agent(learn_batch_wise=learn_batch_wise_param,
-                                                    n_timesteps=n_timesteps,
-                                                    n_episodes=n_episodes)
+        learning_curve = np.mean(rewards_of_run_experiments, axis=0)  # average over repetitions
+        MultipleRunPlot.add_curve(learning_curve, label)
 
-                print(f'Rewards of experiment {rep + 1} for {label}-learn: {all_rewards_of_run}')
-                rewards_of_run_experiments[rep] = all_rewards_of_run
+      MultipleRunPlot.save('dqn_er_tn_learning_methods.png')
 
-            learning_curve = np.mean(rewards_of_run_experiments, axis=0)  # average over repetitions
-            MultipleRunPlot.add_curve(learning_curve, label)
-
-        MultipleRunPlot.save('dqn_er_tn_learning_methods.png')
-
-    else:
-        print('Run experiment on DQN agent')
+      else:
+          print('Run experiment on DQN agent')
 
 
 if __name__ == '__main__':
