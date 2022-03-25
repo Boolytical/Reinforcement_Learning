@@ -1,7 +1,7 @@
 import numpy as np
 import time
+import Plotter
 from dqn import DQN
-from Helper import LearningCurvePlot, smooth
 
 def average_over_repetitions(n_repetitions, n_episodes, n_timesteps, alpha, gamma, policy, epsilon_start, epsilon_end, epsilon_decay_rate,
                              tau, max_replays, batch_size, smoothing_window=51):
