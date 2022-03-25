@@ -2,7 +2,9 @@ import gym
 import numpy as np
 import random
 from tensorflow import keras
+
 from util import softmax
+
 
 # ---------- Deep Q-Learning Agent ----------
 class DQNAgent:
@@ -15,11 +17,9 @@ class DQNAgent:
         self.policy = param_dict['policy']
 
         # Parameters of epsilon greedy policy
-        self.epsilon_max = param_dict['epsilon']
-        self.epsilon = copy(self.epsilon_max)
+        self.epsilon = param_dict['epsilon']
         self.epsilon_min = param_dict['epsilon_min']
         self.epsilon_decay_rate = param_dict['epsilon_decay_rate']
-        self.steps = 0
 
         # Parameters of softmax policy
         self.tau = param_dict['tau']
@@ -35,11 +35,6 @@ class DQNAgent:
         self.replay_memory = [] # Store the experience of the agent in tuple (s_t, a_t, r_t+1, s_t+1)
         
         self.dnn_model = self._initialize_dnn()
-
-        if param_dict['target_network']:
-            self.dnn_model_static = self._initialize_dnn() # Use this model for generating the target value
-        else:
-            self.dnn_model_static = None
         
     # Build the dnn model that outputs the Q-values for every action given a specific state 
     def _initialize_dnn(self):
@@ -48,8 +43,8 @@ class DQNAgent:
         model = keras.Sequential(
             [
                 keras.layers.Input(shape=(self.n_states,)),
-                keras.layers.Dense(units=24, activation='relu'),    # 64 used for good results with batch-wise
-                keras.layers.Dense(units=12, activation='relu'),    # 32 used for good results with sample-wise
+                keras.layers.Dense(units=64, activation='relu'),
+                keras.layers.Dense(units=32, activation='relu'),
                 keras.layers.Dense(units=self.n_actions, activation='linear')
             ]
         )
@@ -72,27 +67,16 @@ class DQNAgent:
     
             batch_memory = random.sample(self.replay_memory, self.batch_size) # Every memory can be selected only once
             
-            if self.dnn_model_static:
-                current_weights = self.dnn_model.get_weights() # Get the current weights of the model
-                self.dnn_model_static.set_weights(current_weights) # Freeze the current model into the static model
-            
             for s, a, r, s_next, done in batch_memory:
                 
                 if done:
                     target = r
                 else:
-
-                    if self.dnn_model_static:
-                        q_values_of_s_next = self.dnn_model_static.predict(s_next)
-                    else:
-                        q_values_of_s_next = self.dnn_model.predict(s_next)
+                    q_values_of_s_next = self.dnn_model.predict(s_next)
 
                     target = r + self.gamma * np.amax(q_values_of_s_next)
                     
-                if self.dnn_model_static:
-                    targets_fit = self.dnn_model_static.predict(s)  # Get the predicted target values
-                else:
-                    targets_fit = self.dnn_model.predict(s) # Get the predicted target values
+                targets_fit = self.dnn_model.predict(s) # Get the predicted target values
 
                 targets_fit[0][a] = target # Insert the calculated Q-value 
                 
@@ -128,27 +112,31 @@ class DQNAgent:
     # Choose action combined with epsilon greedy method to balance between exploration and exploitation
     def choose_action(self, s):
         if self.policy == 'egreedy':
-            # Decay the epsilon greedy
-            self.epsilon = self.epsilon_max + (self.epsilon_min - self.epsilon_max) * np.exp(-1 * self.steps / self.epsilon_decay_rate)
-            self.steps += 1
+            # current_epsilon = self.epsilon_end + (self.epsilon_start - self.epsilon_end) * np.exp(-1 * self.steps / self.epsilon_decay_rate)
+            # self.steps += 1
 
-            if np.random.uniform(0, 1) > self.parameter:
+            if np.random.uniform(0, 1) > self.epsilon:
                 a = np.argmax(self.dnn_model.predict(s)) # Choose action with highest Q-value
             else:
                 a = np.random.randint(0,self.n_actions)   # Choose random action 
-
+        
         elif self.policy == 'softmax':
-            action_probabilities = softmax(self.dnn_model.predict(s), self.tau)
-            a = random.choice(self.n_actions, p=action_probabilities)   # Choose action based on their probabilities
 
+            a_dist = softmax(x=self.dnn_model.predict(s)[0], temp=self.tau)  # Replace this with correct action selection
+            # this samples a random element from "all_possible_actions" with the probability distribution p (softmax_out in this case)
+            a = np.random.choice(np.arange(0, self.n_actions), p=a_dist)
         else:
             raise KeyError(f'Given policy {self.policy} not existing')
 
         return a # Return chosen action
 
+    # Decay epsilon
+    def decay_epsilon(self, n_episodes: int):
+        if self.policy == 'egreedy' and self.epsilon > self.epsilon_min:
+            epsilon_delta = (self.epsilon - self.epsilon_min) / n_episodes
+            self.epsilon = self.epsilon - epsilon_delta   
 
-# --------- https://gym.openai.com/docs/ ----------
-# Place the agent into the cartpole environment and return all received rewards per episode
+
 def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
 
     env = gym.make('CartPole-v1')   # create environment of CartPole-v1
@@ -173,16 +161,21 @@ def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
             state = state_next
 
             if done:
-                print("Episode {} with epsilon {} finished after {} timesteps".format(e+1, dqn_agent.epsilon, t+1))
+
+                if dqn_agent.policy == 'egreedy':
+                    print("Episode {} with epsilon {} finished after {} timesteps".format(e+1, dqn_agent.epsilon, t+1))
+                elif dqn_agent.policy == 'softmax':
+                    print("Episode {} finished after {} timesteps".format(e + 1, t + 1))
                 env_scores.append(t+1)
                 break
         
-        if param_dict['learn_batch_wise']:
+        if param_dict['target_network']:
             dqn_agent.learn_batch_wise() # learn from current collected experience feeding whole batch to network
         else:
             dqn_agent.learn_sample_wise() # learn from current collected experience feeding one experience of batch to the network per time
 
-        dqn_agent.decay_epsilon(n_episodes) # decay epsilon after every episode
+        if dqn_agent.policy == 'egreedy':
+            dqn_agent.decay_epsilon(n_episodes) # decay epsilon after every episode
 
     env.close()
 
