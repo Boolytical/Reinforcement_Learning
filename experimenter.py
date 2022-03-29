@@ -78,13 +78,13 @@ def run_softmax(param_dic_run):
 
 
 # Determine which DQN agent is used with experiment
-def determine_experiment(experience_replay: bool, target_network: bool):
-    n_episodes = 200  # number of episodes the agent will go through
+def determine_experiment(all_variations: bool, experience_replay: bool, target_network: bool):
+    n_episodes = 250  # number of episodes the agent will go through
     n_timesteps = 500  # number of timesteps one episode can maximally contain
-    n_repetitions = 12 # number of repetitions per experiment setting
-    n_processes = 4 # number of process to run in parallel
-    reps_per_process = int(n_repetitions / n_processes) # repetitions of one experiment performed by one process
-    smoothing_window = 51
+    n_repititions = 12 # number of repititions per experiment setting
+    n_processes = 6 # number of process to run in parallel
+    reps_per_process = int(n_repititions / n_processes) # repititions of one experiment performed by one process
+    smoothing_window = 101
 
     learning_rates = [0.05, 0.1, 0.2]
     epsilon_decay_rates = [0.005, 0.01, 0.02]
@@ -207,11 +207,96 @@ def determine_experiment(experience_replay: bool, target_network: bool):
 
         MultipleRunPlot.save(f'{title}_learning_methods_{policy}_different_settings.png')
 
-        #### Experiment 3: network architecture
+        #### Experiment 3: Tune Gamma-Parameter for best models
+        learning_rate, decay_rate, tau = 0.05, 0.02, 0.5 # Fix optimal parameters
+        gammas = [0.5, 0.75, 0.99]
+        MultipleRunPlot = LearningCurvePlot(title=r'Comparison of best DQN-ER-TN models with different discount rate $\gamma$.' '\n'
+                                                  r'Averaged Results over {} repititions'.format(n_repititions))
+
+        for policy in ('egreedy', 'softmax'):
+            for gamma in gammas:
+                print(
+                    'EGREEDY APPROACH WITH FOLLOWING PARAMATER SETTINGS: alpha={} and epsilon-decay={}\n' 
+                    'SOFTMAX APPROACH WITH FOLLOWING PARAMATER SETTINGS: alpha={} and tau={}\n'
+                    'GAMMA PARAMETER $\gamma$ SET TO {}'.format(
+                        learning_rate, decay_rate, learning_rate, tau, gamma))
+
+                if policy == 'egreedy':
+                    # Define list of dictionaries for each process
+                    # One dictionary contains parameters needed for running e-greedy function
+                    param_dics = []
+                    for _ in range(n_processes):
+                        param_dics.append({'learning_rate': learning_rate,
+                                           'decay_rate': decay_rate,
+                                           'gamma': gamma,
+                                           'n_repititions': reps_per_process,
+                                           'n_episodes': n_episodes,
+                                           'n_timesteps': n_timesteps,
+                                           'target_network': target_network}
+                                          )
+
+                    rewards_of_run_experiments_all = np.empty([n_repititions, n_episodes])
+
+                    with concurrent.futures.ProcessPoolExecutor() as executor:
+
+                        # Map function: Run egreedy function with each parameter dictionary in param_dics
+                        # One mapping is one process!
+                        # Processes are run in parallel and map returns results and stores them in results_process
+                        results_process = executor.map(run_egreedy, param_dics)
+
+                        # iterate through results of processes and combine them.
+                        # This is done by collecting all results in a global result array: rewards_of_run_experiments_all
+                        for i, result in enumerate(results_process):
+                            tmp = i * reps_per_process  # help variable to store rewards of each process properly
+                            rewards_of_run_experiments_all[tmp: tmp + reps_per_process, :] = result
+
+                        # average over repetitions and smooth learning curve
+                        learning_curve = smooth(np.mean(rewards_of_run_experiments_all, axis=0), smoothing_window)
+                        MultipleRunPlot.add_curve(y=learning_curve,
+                                                  label=r'$\epsilon$-greedy with $\gamma$={}'.format(gamma))
+
+                if policy == 'softmax':
+                    # Define list of dictionaries for each process
+                    # One dictionary contains parameters needed for running softmax function
+                    param_dics = []
+                    for _ in range(n_processes):
+                        param_dics.append({'learning_rate': learning_rate,
+                                           'tau': tau,
+                                           'gamma': gamma,
+                                           'n_repititions': reps_per_process,
+                                           'n_episodes': n_episodes,
+                                           'n_timesteps': n_timesteps,
+                                           'target_network': target_network}
+                                          )
+
+                    rewards_of_run_experiments_all = np.empty([n_repititions, n_episodes])
+
+                    with concurrent.futures.ProcessPoolExecutor() as executor:
+
+                        # Map function: Run softmax function with each parameter dictionary in param_dics
+                        # One mapping is one process!
+                        # Processes are run in parallel and map returns results and stores them in results_process
+                        results_process = executor.map(run_softmax, param_dics)
+
+                        # iterate through results of processes and combine them.
+                        # This is done by collecting all results in a global result array: rewards_of_run_experiments_all
+                        for i, result in enumerate(results_process):
+                            tmp = i * reps_per_process  # help variable to store rewards of each process properly
+                            rewards_of_run_experiments_all[tmp: tmp + reps_per_process, :] = result
+
+                        # average over repetitions and smooth learning curve
+                        learning_curve = smooth(np.mean(rewards_of_run_experiments_all, axis=0), smoothing_window)
+                        MultipleRunPlot.add_curve(y=learning_curve,
+                                                  label=r'Softmax policy with $\gamma$={}'.format(gamma))
+
+        MultipleRunPlot.save(f'optimal_dqn_er_tn_learning_models_different_gammas.png')
+        
+        #### Experiment 4: network architecture
         # NN = [[24, 24], [64, 32], [24, 24, 24]]
         # policies = ['egreedy', 'softmax']
         #
         # ## TO DO: add optimal everything based on first two test ##
+        # optimal_gamma = 
         # optimal_learning_rate =
         # optimal_decay_rate =
         # optimal_tau =
@@ -235,7 +320,7 @@ def determine_experiment(experience_replay: bool, target_network: bool):
         #                                'learning_rate': optimal_learning_rate,
         #                                'decay_rate': optimal_decay_rate,
         #                                'tau': optimal_tau,
-        #                                'gamma': gamma,
+        #                                'gamma': optimal_gamma,
         #                                'n_repetitions': reps_per_process,
         #                                'n_episodes': n_episodes,
         #                                'n_timesteps': n_timesteps,
@@ -275,8 +360,6 @@ def determine_experiment(experience_replay: bool, target_network: bool):
 
     ## TO DO: implement the final check between all DQN tests based on optimal DQN-ER-TN parameters
 
-
-
 def main():
     # https://docs.python.org/3/library/argparse.html#module-argparse
     parser = argparse.ArgumentParser(prog='RLA2', description='DQN Experiments')
@@ -298,4 +381,4 @@ def main():
 if __name__ == '__main__':
     start = time.time()
     main()
-    print('Running Script takes {} minutes'.format((time.time() - start) / 60))
+    print('Total Run takes {} minutes'.format((time.time() - start) / 60))
