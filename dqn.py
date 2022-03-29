@@ -2,7 +2,6 @@ import gym
 import numpy as np
 import random
 from tensorflow import keras
-import copy
 from util import softmax
 
 
@@ -15,6 +14,7 @@ class DQNAgent:
         self.gamma = param_dict['gamma']
 
         self.policy = param_dict['policy']
+        self.NN = param_dict['NN']
 
         # Parameters of epsilon greedy policy
         self.epsilon_max = param_dict['epsilon']
@@ -42,11 +42,14 @@ class DQNAgent:
     def _initialize_dnn(self):
         print('Create a neural network with {} input nodes and {} output nodes'.format(self.n_states, self.n_actions))
 
+        layers = []
+        for units in self.NN:
+            layers.append(keras.layers.Dense(units=units, activation='relu'))
+
         model = keras.Sequential(
             [
                 keras.layers.Input(shape=(self.n_states,)),
-                keras.layers.Dense(units=64, activation='relu'),
-                keras.layers.Dense(units=32, activation='relu'),
+                layers,
                 keras.layers.Dense(units=self.n_actions, activation='linear')
             ]
         )
@@ -68,18 +71,14 @@ class DQNAgent:
         if len(self.replay_memory) >= self.batch_size: # Only sample and learn if the agent has collected enough experience
 
             batch_memory = random.sample(self.replay_memory, self.batch_size) # Every memory can be selected only once
-
             for s, a, r, s_next, done in batch_memory:
-
                 if done:
                     target = r
                 else:
                     q_values_of_s_next = self.dnn_model.predict(s_next)
 
                     target = r + self.gamma * np.amax(q_values_of_s_next)
-
                 targets_fit = self.dnn_model.predict(s) # Get the predicted target values
-
                 targets_fit[0][a] = target # Insert the calculated Q-value
 
                 # Use the current model again to fit the weights
@@ -107,7 +106,6 @@ class DQNAgent:
             target = self.dnn_model.predict(states_next)  # Dim: batch_size x 2(actions)
 
             for i in range(self.batch_size):
-
                 if not dones[i]:
                     output[i, :][actions[i]] = rewards[i] + self.gamma * np.max(target[i])
                 else:
@@ -119,14 +117,12 @@ class DQNAgent:
     # Choose action combined with epsilon greedy method to balance between exploration and exploitation
     def choose_action(self, s):
         if self.policy == 'egreedy':
-
             if np.random.uniform(0, 1) > self.epsilon:
                 a = np.argmax(self.dnn_model.predict(s)) # Choose action with highest Q-value
             else:
                 a = np.random.randint(0,self.n_actions)   # Choose random action
 
         elif self.policy == 'softmax':
-
             a_dist = softmax(x=self.dnn_model.predict(s)[0], temp=self.tau)  # Replace this with correct action selection
             # this samples a random element from "all_possible_actions" with the probability distribution p (softmax_out in this case)
             a = np.random.choice(np.arange(0, self.n_actions), p=a_dist)
@@ -149,7 +145,6 @@ class DQNAgent:
 
 
 def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
-
     env = gym.make('CartPole-v1')   # create environment of CartPole-v1
     dqn_agent = DQNAgent(param_dict)
 
@@ -171,11 +166,10 @@ def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
             state = state_next
 
             if done:
-
                 if dqn_agent.policy == 'egreedy':
                     print("Episode {} with epsilon {} finished after {} timesteps".format(e+1, dqn_agent.epsilon, t+1))
                 elif dqn_agent.policy == 'softmax':
-                    print("Episode {} finished after {} timesteps".format(e + 1, t + 1))
+                    print("Episode {} with tau {} finished after {} timesteps".format(e + 1, dqn_agent.tau, t + 1))
                 env_scores.append(t+1)
                 break
 
