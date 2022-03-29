@@ -297,29 +297,26 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
         #
         # ## TO DO: add optimal everything based on first two test ##
         # optimal_gamma = 
-        # optimal_learning_rate =
-        # optimal_decay_rate =
-        # optimal_tau =
-
+        
         # for policy in policies:
         #     for architecture in NN:
         #         MultipleRunPlot = LearningCurvePlot(title=f'{title} with {policy} annealing. Averaged Results over {n_repetitions} repetitions')
         #
         #         if policy == 'egreedy':
         #             print(r'$\epsilon$-GREEDY APPROACH WITH FOLLOWING PARAMATER SETTINGS: $\alpha$={} and $\epsilon$-decay-rate={}'.format(
-        #                 optimal_learning_rate, optimal_decay_rate))
+        #                 learning_rate, decay_rate))
         #         elif policy == 'softmax':
         #             print(r'SOFTMAX APPROACH WITH FOLLOWING PARAMATER SETTINGS: $\alpha$={} and $\tau$={}'.format(
-        #                 optimal_learning_rate, optimal_tau))
+        #                 learning_rate, tau))
         #
         #         # Define list of dictionaries for each process
         #         # One dictionary contains parameters needed for running softmax function
         #         param_dics = []
         #         for _ in range(n_processes):
         #             param_dics.append({'NN' : architecture,
-        #                                'learning_rate': optimal_learning_rate,
-        #                                'decay_rate': optimal_decay_rate,
-        #                                'tau': optimal_tau,
+        #                                'learning_rate': learning_rate,
+        #                                'decay_rate': decay_rate,
+        #                                'tau': tau,
         #                                'gamma': optimal_gamma,
         #                                'n_repetitions': reps_per_process,
         #                                'n_episodes': n_episodes,
@@ -349,11 +346,11 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
         #             if policy == 'egreedy':
         #                 MultipleRunPlot.add_curve(y=learning_curve,
         #                                           label=r'$\epsilon$-greedy with $\alpha$={} and $\epsilon$-decay-rate={}'.format(
-        #                                               optimal_learning_rate, optimal_decay_rate))
+        #                                               learning_rate, decay_rate))
         #             elif policy == 'softmax':
         #                 MultipleRunPlot.add_curve(y=learning_curve,
         #                                           label=r'{}-policy with $\alpha$={} and $\tau$-rate={}'.format(
-        #                                               policy, optimal_learning_rate, optimal_tau))
+        #                                               policy, learning_rate, tau))
         #
         #     MultipleRunPlot.save(f'{title}_learning_methods_{policy}_different_settings.png')
 
