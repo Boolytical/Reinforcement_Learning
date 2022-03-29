@@ -2,7 +2,6 @@
 An edited version of the learning curve plot from 'Reinforcement Learning' Assignment 1
 '''
 
-import numpy as np
 import matplotlib.pyplot as plt
 from scipy.signal import savgol_filter
 
@@ -31,7 +30,7 @@ class LearningCurvePlot:
 
     # Save the plot figure given file name
     def save(self, filename='dqn_experiment.png'):
-        self.ax.legend()
+        self.ax.legend(prop={'size': 6})
         self.fig.savefig(filename, dpi=300)
 
 
