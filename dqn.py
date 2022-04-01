@@ -2,6 +2,7 @@ import gym
 import numpy as np
 import random
 from tensorflow import keras
+from util import softmax
 
 # ---------- Deep Q-Learning Agent ----------
 class DQNAgent:

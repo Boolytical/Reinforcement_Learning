@@ -89,13 +89,7 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
     NN = [64, 32]
 
     # For experiments below, all parameter experiments are performed
-    if not experience_replay and not target_network:
-        print('Run experiment on DQN agent')
-        batch_size = 1
-        target_network = False
-        title = 'DQN'
-
-    elif experience_replay and not target_network:
+    if experience_replay and not target_network:
         print('Run experiment on DQN-ER agent')
         batch_size = 64
         target_network = False
@@ -201,7 +195,7 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
         # MultipleRunPlot.save(f'{title}_learning_methods_{policy}_different_settings.png')
         #
         # #### Experiment 3: Tune Gamma-Parameter for best models
-        # learning_rate, decay_rate, tau = 0.1, 0.001, 0.5 # Fix optimal parameters
+        learning_rate, decay_rate, tau = 0.1, 0.001, 0.5 # Fix optimal parameters
         # gammas = [0.5, 0.75, 0.99]
         # MultipleRunPlot = LearningCurvePlot(title=r'Comparison of best {} models with different discount rate $\gamma$.' '\n'
         #                                           r'Averaged Results over {} repetitions'.format(title, n_repetitions))
@@ -325,16 +319,54 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
                     learning_curve = smooth(np.mean(rewards_of_run_experiments_all, axis=0), smoothing_window)
                     if policy == 'egreedy':
                         MultipleRunPlot.add_curve(y=learning_curve,
-                                                  label=r'$\epsilon$-greedy with $\alpha$={} and $\epsilon$-decay-rate={}'.format(
-                                                      learning_rate, decay_rate))
+                                                  label=r'$\epsilon$-greedy with $\alpha$={} and $\epsilon$-decay-rate={} and NN_nodes={}'.format(
+                                                      learning_rate, decay_rate, architecture))
                     elif policy == 'softmax':
                         MultipleRunPlot.add_curve(y=learning_curve,
-                                                  label=r'{}-policy with $\alpha$={} and $\tau$-rate={}'.format(
-                                                      policy, learning_rate, tau))
-            MultipleRunPlot.save(f'{title}_learning_methods_{policy}_different_settings.png')
+                                                  label=r'{}-policy with $\alpha$={} and $\tau$-rate={} and NN_nodes={}'.format(
+                                                      policy, learning_rate, tau, architecture))
+            MultipleRunPlot.save(f'{title}_learning_methods_{policy}_NNs.png')
 
+    #### The final check between DQN and the selected DQN-variation
+    batch_size = [batch_size, 1]
+    target_network = [target_network, False]
+    title = [title, 'DQN']
+    learning_rate, decay_rate, tau, gamma, NN, policy = 0.1, 0.001, 0.5, 0.99, [64, 32], 'egreedy' ## TO DO: change to optimal parameters
+    MultipleRunPlot = LearningCurvePlot(title=f'{title[0]} vs. {title[1]} with {policy} annealing. Averaged Results over {n_repetitions} repetitions')
 
-    ## TO DO: implement the final check between all DQN tests based on optimal DQN-ER-TN parameters
+    # Define list of dictionaries for each process
+    for i in range(2):
+        param_dics = []
+        for _ in range(n_processes):
+            param_dics.append({'learning_rate': learning_rate,
+                                'decay_rate': decay_rate,
+                                'gamma': gamma,
+                                'n_repetitions': reps_per_process,
+                                'n_episodes': n_episodes,
+                                'n_timesteps': n_timesteps,
+                                'target_network': target_network[i],
+                                'batch_size' : batch_size[i],
+                                'NN' : NN})
+
+        # Initialize array which will contain rewards of all repetitions for one setting
+        rewards_of_run_experiments_all = np.empty([n_repetitions, n_episodes])
+
+        with concurrent.futures.ProcessPoolExecutor() as executor:
+            # Map function: Run egreedy function with each parameter dictionary in param_dics
+            results_process = executor.map(run_egreedy, param_dics)
+
+            # iterate through results of processes and combine them.
+            for i, result in enumerate(results_process):
+                tmp = i * reps_per_process # help variable to store rewards of each process properly
+                rewards_of_run_experiments_all[tmp : tmp + reps_per_process, :] = result
+
+            # average over repetitions and smooth learning curve
+            learning_curve = smooth(np.mean(rewards_of_run_experiments_all, axis=0), smoothing_window)
+            MultipleRunPlot.add_curve(y=learning_curve,
+                                      label=r'{} on $\epsilon$-greedy with $\alpha$={} and $\epsilon$-decay-rate={}'.format(
+                                          title[i], learning_rate, decay_rate))
+    MultipleRunPlot.save(f'{title[0]}_learning_methods_{policy}_different_settings.png')
+
 
 def main():
     # https://docs.python.org/3/library/argparse.html#module-argparse
