@@ -39,17 +39,11 @@ class DQNAgent:
     def _initialize_dnn(self):
         print('Create a neural network with {} input nodes and {} output nodes'.format(self.n_states, self.n_actions))
 
-        layers = []
+        model = keras.Sequential()
+        model.add(keras.layers.Input(shape=(self.n_states,)))
         for units in self.NN:
-            layers.append(keras.layers.Dense(units=units, activation='relu'))
-
-        model = keras.Sequential(
-            [
-                keras.layers.Input(shape=(self.n_states,)),
-                layers,
-                keras.layers.Dense(units=self.n_actions, activation='linear')
-            ]
-        )
+            model.add(keras.layers.Dense(units=units, activation='relu'))
+        model.add(keras.layers.Dense(units=self.n_actions, activation='linear'))
 
         model.summary()
         model.compile(loss='mse', optimizer=keras.optimizers.Adam(learning_rate=self.alpha))
