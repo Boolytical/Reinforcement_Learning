@@ -107,95 +107,94 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
         target_network = True
         title = 'DQN-ER-TN'
 
-        # #### Experiment 1: e-greedy
-        # policy = 'egreedy'
-        # MultipleRunPlot = LearningCurvePlot(title=f'{title} with {policy} annealing. Averaged Results over {n_repetitions} repetitions')
-        #
-        # for learning_rate in learning_rates:
-        #     for decay_rate in epsilon_decay_rates:
-        #         print(r'$\epsilon$-GREEDY APPROACH WITH FOLLOWING PARAMATER SETTINGS: $\alpha$={} and $\epsilon$-decay-rate={}'.format(learning_rate, decay_rate))
-        #
-        #         # Define list of dictionaries for each process
-        #         # One dictionary contains parameters needed for running e-greedy function
-        #         param_dics = []
-        #         for _ in range(n_processes):
-        #             param_dics.append({'learning_rate': learning_rate,
-        #                                 'decay_rate': decay_rate,
-        #                                 'gamma': gamma,
-        #                                 'n_repetitions': reps_per_process,
-        #                                 'n_episodes': n_episodes,
-        #                                 'n_timesteps': n_timesteps,
-        #                                 'target_network': target_network,
-        #                                 'batch_size' : batch_size,
-        #                                 'NN' : NN})
-        #
-        #         # Initialize array which will contain rewards of all repetitions for one setting
-        #         rewards_of_run_experiments_all = np.empty([n_repetitions, n_episodes])
-        #
-        #         with concurrent.futures.ProcessPoolExecutor() as executor:
-        #             # Map function: Run egreedy function with each parameter dictionary in param_dics
-        #             # One mapping is one process!
-        #             # Processes are run in parallel and map returns results and stores them in results_process
-        #             results_process = executor.map(run_egreedy, param_dics)
-        #
-        #             # iterate through results of processes and combine them.
-        #             # This is done by collecting all results in a global result array: rewards_of_run_experiments_all
-        #             for i, result in enumerate(results_process):
-        #
-        #                 tmp = i * reps_per_process # help variable to store rewards of each process properly
-        #                 rewards_of_run_experiments_all[tmp : tmp + reps_per_process, :] = result
-        #
-        #             # average over repetitions and smooth learning curve
-        #             learning_curve = smooth(np.mean(rewards_of_run_experiments_all, axis=0), smoothing_window)
-        #             MultipleRunPlot.add_curve(y=learning_curve,
-        #                                       label=r'$\epsilon$-greedy with $\alpha$={} and $\epsilon$-decay-rate={}'.format(
-        #                                           learning_rate, decay_rate))
-        # MultipleRunPlot.save(f'{title}_learning_methods_{policy}_different_settings.png')
-        #
-        #
-        # #### Experiment 2: Softmax
-        # policy = 'softmax'
-        # MultipleRunPlot = LearningCurvePlot(title=f'{title} with {policy} policy. Averaged Results over {n_repetitions} repetitions')
-        #
-        # for learning_rate in learning_rates:
-        #     for tau in taus:
-        #         print(r'SOFTMAX APPROACH WITH FOLLOWING PARAMATER SETTINGS: $\alpha$={} and $\tau$={}'.format(
-        #                 learning_rate, tau))
-        #
-        #         # Define list of dictionaries for each process
-        #         # One dictionary contains parameters needed for running softmax function
-        #         param_dics = []
-        #         for _ in range(n_processes):
-        #             param_dics.append({'learning_rate': learning_rate,
-        #                                'tau': tau,
-        #                                'gamma': gamma,
-        #                                'n_repetitions': reps_per_process,
-        #                                'n_episodes': n_episodes,
-        #                                'n_timesteps': n_timesteps,
-        #                                'target_network': target_network,
-        #                                'batch_size' : batch_size,
-        #                                'NN' : NN}
-        #                               )
-        #         rewards_of_run_experiments_all = np.empty([n_repetitions, n_episodes])
-        #
-        #         with concurrent.futures.ProcessPoolExecutor() as executor:
-        #             # Map function: Run softmax function with each parameter dictionary in param_dics
-        #             results_process = executor.map(run_softmax, param_dics)
-        #
-        #             # iterate through results of processes and combine them.
-        #             for i, result in enumerate(results_process):
-        #                 tmp = i * reps_per_process # help variable to store rewards of each process properly
-        #                 rewards_of_run_experiments_all[tmp: tmp + reps_per_process, :] = result
-        #
-        #             # average over repetitions and smooth learning curve
-        #             learning_curve = smooth(np.mean(rewards_of_run_experiments_all, axis=0), smoothing_window)
-        #             MultipleRunPlot.add_curve(y=learning_curve,
-        #                                       label=r'{}-policy with $\alpha$={} and $\tau$-rate={}'.format(
-        #                                           policy, learning_rate, tau))
-        # MultipleRunPlot.save(f'{title}_learning_methods_{policy}_different_settings.png')
-        #
+        #### Experiment 1: e-greedy
+        policy = 'egreedy'
+        MultipleRunPlot = LearningCurvePlot(title=f'{title} with {policy} annealing. Averaged Results over {n_repetitions} repetitions')
+
+        for learning_rate in learning_rates:
+            for decay_rate in epsilon_decay_rates:
+                print(r'$\epsilon$-GREEDY APPROACH WITH FOLLOWING PARAMATER SETTINGS: $\alpha$={} and $\epsilon$-decay-rate={}'.format(learning_rate, decay_rate))
+
+                # Define list of dictionaries for each process
+                # One dictionary contains parameters needed for running e-greedy function
+                param_dics = []
+                for _ in range(n_processes):
+                    param_dics.append({'learning_rate': learning_rate,
+                                        'decay_rate': decay_rate,
+                                        'gamma': gamma,
+                                        'n_repetitions': reps_per_process,
+                                        'n_episodes': n_episodes,
+                                        'n_timesteps': n_timesteps,
+                                        'target_network': target_network,
+                                        'batch_size' : batch_size,
+                                        'NN' : NN})
+
+                # Initialize array which will contain rewards of all repetitions for one setting
+                rewards_of_run_experiments_all = np.empty([n_repetitions, n_episodes])
+
+                with concurrent.futures.ProcessPoolExecutor() as executor:
+                    # Map function: Run egreedy function with each parameter dictionary in param_dics
+                    # One mapping is one process!
+                    # Processes are run in parallel and map returns results and stores them in results_process
+                    results_process = executor.map(run_egreedy, param_dics)
+
+                    # iterate through results of processes and combine them.
+                    # This is done by collecting all results in a global result array: rewards_of_run_experiments_all
+                    for i, result in enumerate(results_process):
+
+                        tmp = i * reps_per_process # help variable to store rewards of each process properly
+                        rewards_of_run_experiments_all[tmp : tmp + reps_per_process, :] = result
+
+                    # average over repetitions and smooth learning curve
+                    learning_curve = smooth(np.mean(rewards_of_run_experiments_all, axis=0), smoothing_window)
+                    MultipleRunPlot.add_curve(y=learning_curve,
+                                              label=r'$\epsilon$-greedy with $\alpha$={} and $\epsilon$-decay-rate={}'.format(
+                                                  learning_rate, decay_rate))
+        MultipleRunPlot.save(f'{title}_learning_methods_{policy}_different_settings.png')
+
+
+        #### Experiment 2: Softmax
+        policy = 'softmax'
+        MultipleRunPlot = LearningCurvePlot(title=f'{title} with {policy} policy. Averaged Results over {n_repetitions} repetitions')
+
+        for learning_rate in learning_rates:
+            for tau in taus:
+                print(r'SOFTMAX APPROACH WITH FOLLOWING PARAMATER SETTINGS: $\alpha$={} and $\tau$={}'.format(
+                        learning_rate, tau))
+
+                # Define list of dictionaries for each process
+                param_dics = []
+                for _ in range(n_processes):
+                    param_dics.append({'learning_rate': learning_rate,
+                                       'tau': tau,
+                                       'gamma': gamma,
+                                       'n_repetitions': reps_per_process,
+                                       'n_episodes': n_episodes,
+                                       'n_timesteps': n_timesteps,
+                                       'target_network': target_network,
+                                       'batch_size' : batch_size,
+                                       'NN' : NN}
+                                      )
+                rewards_of_run_experiments_all = np.empty([n_repetitions, n_episodes])
+
+                with concurrent.futures.ProcessPoolExecutor() as executor:
+                    # Map function: Run softmax function with each parameter dictionary in param_dics
+                    results_process = executor.map(run_softmax, param_dics)
+
+                    # iterate through results of processes and combine them.
+                    for i, result in enumerate(results_process):
+                        tmp = i * reps_per_process # help variable to store rewards of each process properly
+                        rewards_of_run_experiments_all[tmp: tmp + reps_per_process, :] = result
+
+                    # average over repetitions and smooth learning curve
+                    learning_curve = smooth(np.mean(rewards_of_run_experiments_all, axis=0), smoothing_window)
+                    MultipleRunPlot.add_curve(y=learning_curve,
+                                              label=r'{}-policy with $\alpha$={} and $\tau$-rate={}'.format(
+                                                  policy, learning_rate, tau))
+        MultipleRunPlot.save(f'{title}_learning_methods_{policy}_different_settings.png')
+
         # #### Experiment 3: Tune Gamma-Parameter for best models
-        learning_rate, decay_rate, tau = 0.1, 0.001, 0.5 # Fix optimal parameters
+        # learning_rate, decay_rate, tau = 0.1, 0.001, 0.5 # Fix optimal parameters
         # gammas = [0.5, 0.75, 0.99]
         # MultipleRunPlot = LearningCurvePlot(title=r'Comparison of best {} models with different discount rate $\gamma$.' '\n'
         #                                           r'Averaged Results over {} repetitions'.format(title, n_repetitions))
@@ -241,7 +240,6 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
         #
         #         if policy == 'softmax':
         #             # Define list of dictionaries for each process
-        #             # One dictionary contains parameters needed for running softmax function
         #             param_dics = []
         #             for _ in range(n_processes):
         #                 param_dics.append({'learning_rate': learning_rate,
@@ -270,62 +268,62 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
         #                                           label=r'Softmax policy with $\gamma$={}'.format(gamma))
         # MultipleRunPlot.save(f'optimal_dqn_er_tn_learning_models_different_gammas.png')
         #
-        #### Experiment 4: network architecture
-        NN = [[24, 24], [64, 32], [24, 24, 24]]
-        policies = ['egreedy', 'softmax']
-        optimal_gamma = 0.99
-
-        for policy in policies:
-            for architecture in NN:
-                MultipleRunPlot = LearningCurvePlot(title=f'{title} with {policy} annealing. Averaged Results over {n_repetitions} repetitions')
-
-                if policy == 'egreedy':
-                    print(r'$\epsilon$-GREEDY APPROACH WITH FOLLOWING PARAMATER SETTINGS: $\alpha$={} and $\epsilon$-decay-rate={}'.format(
-                        learning_rate, decay_rate))
-                elif policy == 'softmax':
-                    print(r'SOFTMAX APPROACH WITH FOLLOWING PARAMATER SETTINGS: $\alpha$={} and $\tau$={}'.format(
-                        learning_rate, tau))
-
-                # Define list of dictionaries for each process
-                # One dictionary contains parameters needed for running softmax function
-                param_dics = []
-                for _ in range(n_processes):
-                    param_dics.append({'NN' : architecture,
-                                       'learning_rate': learning_rate,
-                                       'decay_rate': decay_rate,
-                                       'tau': tau,
-                                       'gamma': optimal_gamma,
-                                       'n_repetitions': reps_per_process,
-                                       'n_episodes': n_episodes,
-                                       'n_timesteps': n_timesteps,
-                                       'target_network': target_network,
-                                       'batch_size': batch_size}
-                                      )
-                rewards_of_run_experiments_all = np.empty([n_repetitions, n_episodes])
-
-                with concurrent.futures.ProcessPoolExecutor() as executor:
-                    # Map function: Run softmax function with each parameter dictionary in param_dics
-                    if policy == 'egreedy':
-                        results_process = executor.map(run_egreedy, param_dics)
-                    elif policy == 'softmax':
-                        results_process = executor.map(run_softmax, param_dics)
-
-                    # iterate through results of processes and combine them.
-                    for i, result in enumerate(results_process):
-                        tmp = i * reps_per_process  # help variable to store rewards of each process properly
-                        rewards_of_run_experiments_all[tmp: tmp + reps_per_process, :] = result
-
-                    # average over repetitions and smooth learning curve
-                    learning_curve = smooth(np.mean(rewards_of_run_experiments_all, axis=0), smoothing_window)
-                    if policy == 'egreedy':
-                        MultipleRunPlot.add_curve(y=learning_curve,
-                                                  label=r'$\epsilon$-greedy with $\alpha$={} and $\epsilon$-decay-rate={} and NN_nodes={}'.format(
-                                                      learning_rate, decay_rate, architecture))
-                    elif policy == 'softmax':
-                        MultipleRunPlot.add_curve(y=learning_curve,
-                                                  label=r'{}-policy with $\alpha$={} and $\tau$-rate={} and NN_nodes={}'.format(
-                                                      policy, learning_rate, tau, architecture))
-            MultipleRunPlot.save(f'{title}_learning_methods_{policy}_NNs.png')
+        # #### Experiment 4: network architecture
+        # NN = [[24, 24], [64, 32], [24, 24, 24]]
+        # policies = ['egreedy', 'softmax']
+        # optimal_gamma = 0.99
+        #
+        # for policy in policies:
+        #     for architecture in NN:
+        #         MultipleRunPlot = LearningCurvePlot(title=f'{title} with {policy} annealing. Averaged Results over {n_repetitions} repetitions')
+        #
+        #         if policy == 'egreedy':
+        #             print(r'$\epsilon$-GREEDY APPROACH WITH FOLLOWING PARAMATER SETTINGS: $\alpha$={} and $\epsilon$-decay-rate={}'.format(
+        #                 learning_rate, decay_rate))
+        #         elif policy == 'softmax':
+        #             print(r'SOFTMAX APPROACH WITH FOLLOWING PARAMATER SETTINGS: $\alpha$={} and $\tau$={}'.format(
+        #                 learning_rate, tau))
+        #
+        #         # Define list of dictionaries for each process
+        #         # One dictionary contains parameters needed for running softmax function
+        #         param_dics = []
+        #         for _ in range(n_processes):
+        #             param_dics.append({'NN' : architecture,
+        #                                'learning_rate': learning_rate,
+        #                                'decay_rate': decay_rate,
+        #                                'tau': tau,
+        #                                'gamma': optimal_gamma,
+        #                                'n_repetitions': reps_per_process,
+        #                                'n_episodes': n_episodes,
+        #                                'n_timesteps': n_timesteps,
+        #                                'target_network': target_network,
+        #                                'batch_size': batch_size}
+        #                               )
+        #         rewards_of_run_experiments_all = np.empty([n_repetitions, n_episodes])
+        #
+        #         with concurrent.futures.ProcessPoolExecutor() as executor:
+        #             # Map function: Run softmax function with each parameter dictionary in param_dics
+        #             if policy == 'egreedy':
+        #                 results_process = executor.map(run_egreedy, param_dics)
+        #             elif policy == 'softmax':
+        #                 results_process = executor.map(run_softmax, param_dics)
+        #
+        #             # iterate through results of processes and combine them.
+        #             for i, result in enumerate(results_process):
+        #                 tmp = i * reps_per_process  # help variable to store rewards of each process properly
+        #                 rewards_of_run_experiments_all[tmp: tmp + reps_per_process, :] = result
+        #
+        #             # average over repetitions and smooth learning curve
+        #             learning_curve = smooth(np.mean(rewards_of_run_experiments_all, axis=0), smoothing_window)
+        #             if policy == 'egreedy':
+        #                 MultipleRunPlot.add_curve(y=learning_curve,
+        #                                           label=r'$\epsilon$-greedy with $\alpha$={} and $\epsilon$-decay-rate={} and NN_nodes={}'.format(
+        #                                               learning_rate, decay_rate, architecture))
+        #             elif policy == 'softmax':
+        #                 MultipleRunPlot.add_curve(y=learning_curve,
+        #                                           label=r'{}-policy with $\alpha$={} and $\tau$-rate={} and NN_nodes={}'.format(
+        #                                               policy, learning_rate, tau, architecture))
+        #     MultipleRunPlot.save(f'{title}_learning_methods_{policy}_NNs.png')
 
     #### The final check between DQN and the selected DQN-variation
     batch_size = [batch_size, 1]
