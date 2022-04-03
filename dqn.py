@@ -13,6 +13,8 @@ class DQNAgent:
         self.gamma = param_dict['gamma']
 
         self.policy = param_dict['policy']
+        self.experience_replay = param_dict['experience_replay']
+        self.target_network = param_dict['target_network']
         self.NN = param_dict['NN']
 
         # Parameters of epsilon greedy policy
@@ -46,7 +48,8 @@ class DQNAgent:
             model.add(keras.layers.Dense(units=units, activation='relu'))
         model.add(keras.layers.Dense(units=self.n_actions, activation='linear'))
 
-        model.summary()
+
+
         model.compile(loss='mse', optimizer=keras.optimizers.Adam(learning_rate=self.alpha))
 
         return model    # Return the dnn model
@@ -142,6 +145,9 @@ def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
 
     for e in range(n_episodes):
 
+        if not dqn_agent.experience_replay:
+            dqn_agent.replay_memory = []
+
         state = env.reset() # reset environment and get initial state
         state = np.array([state])   # create model compatible shape
 
@@ -162,7 +168,10 @@ def act_in_env(n_episodes: int, n_timesteps: int, param_dict: dict):
                 env_scores.append(t+1)
                 break
 
-        if param_dict['target_network']:
+        if not dqn_agent.experience_replay:
+            dqn_agent.batch_size = len(dqn_agent.replay_memory)
+
+        if dqn_agent.target_network:
             dqn_agent.learn_batch_wise() # learn from current collected experience feeding whole batch to network
         else:
             dqn_agent.learn_sample_wise() # learn from current collected experience feeding one experience of batch to the network per time
