@@ -86,15 +86,15 @@ def run_softmax(param_dic_run):
 # Determine which DQN agent is used with experiment
 def determine_experiment(all_variations: bool, experience_replay: bool, target_network: bool):
 
-    n_episodes = 200  # number of episodes the agent will go through
-    n_timesteps = 500  # number of timesteps one episode can maximally contain
-    n_repetitions = 12  # number of repetitions per experiment setting
-    n_processes = 6  # number of process to run in parallel
-    reps_per_process = int(n_repetitions / n_processes)  # repetitions of one experiment performed by one process
-    smoothing_window = 51
-
 
     if all_variations:
+
+        n_episodes = 1000  # number of episodes the agent will go through
+        n_timesteps = 500  # number of timesteps one episode can maximally contain
+        n_repetitions = 4  # number of repetitions per experiment setting
+        n_processes = 4  # number of process to run in parallel
+        reps_per_process = int(n_repetitions / n_processes)  # repetitions of one experiment performed by one process
+        smoothing_window = 51
 
         print('Run DQN Ablation Study')
         title = 'DQN-Ablation Study'
@@ -102,24 +102,29 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
         methods = ['DQN', 'DQN-TN', 'DQN-ER', 'DQN-TN_ER']
         experience_replay_option = [False, True]
         target_network_option = [False, True]
+
         variations = list(itertools.product(experience_replay_option, target_network_option))
 
         MultipleRunPlot = LearningCurvePlot(title=f'{title}: Averaged Results over {n_repetitions} repetitions')
+
         for method, variation in enumerate(variations):
 
             print(f'RUN {methods[method]}: (experience_replay, target_network) = {variation}!')
 
+            # Fix optimal parameters - Found by Hyperparameter Tuning of DQN-ER-TN
             learning_rate_egreedy, decay_rate, \
             learning_rate_softmax, tau, \
             optimal_gamma, \
-            NN_egreedy, NN_softmax = 0.1, 0.01, 0.05, 1.0, 0.99, [64, 32], [24, 24]  # Fix optimal parameters
+            NN_egreedy, NN_softmax = 0.1, 0.01, 0.05, 1.0, 0.99, [64, 32], [24, 24]
 
+
+            # Depending on which DQN-method is used, experience_replay/target_network are set to True/False
             experience_replay, target_network = variation[0], variation[1]
 
             if experience_replay and target_network:
-                batch_size = 64
+                batch_size = 64 # In DQN-ER-TN batch size is set to 64
             else:
-                batch_size=1
+                batch_size = 1 # or all other DQN variations batch size is set to 1
 
             policies = ['egreedy', 'softmax']
 
@@ -205,11 +210,18 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
                     learning_curve = smooth(np.mean(rewards_of_run_experiments_all, axis=0), smoothing_window)
                     MultipleRunPlot.add_curve(y=learning_curve,
                                               label=f'{policy}-policy - {methods[method]}')
-            MultipleRunPlot.save(f'{title}.png')
+        MultipleRunPlot.save(f'{title}.png')
 
 
 
     else:
+
+        n_episodes = 200  # number of episodes the agent will go through
+        n_timesteps = 500  # number of timesteps one episode can maximally contain
+        n_repetitions = 12  # number of repetitions per experiment setting
+        n_processes = 6  # number of process to run in parallel
+        reps_per_process = int(n_repetitions / n_processes)  # repetitions of one experiment performed by one process
+        smoothing_window = 51
 
         if experience_replay and target_network:
 
