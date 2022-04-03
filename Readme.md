@@ -1,4 +1,5 @@
 # Reinforcement Learning Assignment 2: Deep Q-Learning
+By Esmee Roosenmaallen, Felix Kapulla, Rosa Zwart
 *** 
 The provided .py files (dqn.py, experimenter.py, plotter.py, util.py) implement a deep Q-learning agent that acts in the Cartpole environment provided by Gym, OpenAI (https://gym.openai.com/envs/CartPole-v1/). The code experiments with different parameter settings and variations of the DQN agent including or excluding the usage of a target network and replay memory.
 ***
