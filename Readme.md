@@ -19,3 +19,8 @@ There are multiple options to run the code, listed below:
 * $ python experimenter.py --all_variations         This command runs the ablation study. All DQN variations are run in the environment (DQN, DQN-ER, DQN-TN, DQN-ER-TN) with the optimal parameter settings that have been found in all parameter-tuning experiments using DQN-ER-TN (see above). 
 * $ python experimenter.py         This command runs only the DQN agent with the determined optimal parameter settings found from Experiment 1 to 4 discussed above. (Not used nor discussed in the report.) It is possible to either add argument --experience_replay or --target_network (or both) to this command to run the different variations of the DQN agent individually.
 ***
+
+## Additional comments
+***
+We have used multi-processing provided by the `concurrent.futures` import which is a module of a library that allows multiprocessing on the CPU using its cores.
+***
