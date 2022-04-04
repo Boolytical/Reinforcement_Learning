@@ -89,10 +89,10 @@ def determine_experiment(all_variations: bool, experience_replay: bool, target_n
 
     if all_variations:
 
-        n_episodes = 1000  # number of episodes the agent will go through
+        n_episodes = 750  # number of episodes the agent will go through
         n_timesteps = 500  # number of timesteps one episode can maximally contain
-        n_repetitions = 4  # number of repetitions per experiment setting
-        n_processes = 4  # number of process to run in parallel
+        n_repetitions = 8  # number of repetitions per experiment setting
+        n_processes = 8  # number of process to run in parallel
         reps_per_process = int(n_repetitions / n_processes)  # repetitions of one experiment performed by one process
         smoothing_window = 51
 
